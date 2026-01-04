@@ -40,7 +40,7 @@ export default function Landing() {
 
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold font-display tracking-tight text-slate-900">
-            Medical Tourism Management
+            Rahtaak Medical Services
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Secure patient file management, document scanning, and case tracking for healthcare providers.
