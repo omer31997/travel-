@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -7,37 +7,37 @@ import { users } from "./models/auth";
 export * from "./models/auth";
 
 // Guarantors (Sponsors/Paying Entities)
-export const guarantors = pgTable("guarantors", {
-  id: serial("id").primaryKey(),
+export const guarantors = sqliteTable("guarantors", {
+  id: integer("id").primaryKey(),
   name: text("name").notNull(),
   contactInfo: text("contact_info"),
   email: text("email"),
   address: text("address"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Patients
-export const patients = pgTable("patients", {
-  id: serial("id").primaryKey(),
+export const patients = sqliteTable("patients", {
+  id: integer("id").primaryKey(),
   fullName: text("full_name").notNull(),
   passportNumber: text("passport_number").notNull(),
   medicalReports: text("medical_reports"), // Description or summary
   destination: text("destination"),
   guarantorId: integer("guarantor_id").references(() => guarantors.id),
-  status: text("status").notNull().default("New"), // New, Processing, Traveled, Returned, Paid
-  isLocked: boolean("is_locked").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  status: text("status").notNull().default("New"), // "New", "In Progress", "Travel Expenses Paid", "Traveled", "Treatment Started", "Returned Home", "Paid"
+  isLocked: integer("is_locked", { mode: "boolean" }).default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Documents
-export const documents = pgTable("documents", {
-  id: serial("id").primaryKey(),
+export const documents = sqliteTable("documents", {
+  id: integer("id").primaryKey(),
   patientId: integer("patient_id").notNull().references(() => patients.id),
   fileName: text("file_name").notNull(),
   filePath: text("file_path").notNull(),
   fileType: text("file_type").notNull(), // 'image', 'pdf'
-  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  uploadedAt: integer("uploaded_at", { mode: "timestamp" }).defaultNow(),
 });
 
 // Relations
@@ -75,4 +75,4 @@ export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
-export const STATUS_OPTIONS = ["New", "Processing", "Traveled", "Returned", "Paid"] as const;
+export const STATUS_OPTIONS = ["New", "In Progress", "Travel Expenses Paid", "Traveled", "Treatment Started", "Returned Home", "Paid"] as const;

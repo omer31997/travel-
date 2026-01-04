@@ -1,0 +1,14 @@
+
+[build]
+  command = "npm run build"
+  functions = "netlify/functions"
+  publish = "dist/public"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["dist/index.cjs"]
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200

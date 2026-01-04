@@ -80,36 +80,10 @@ export async function registerRoutes(
       // Auto-lock logic
       let updates = { ...input };
       if (input.status === 'Paid' && !existing.isLocked) {
-          // If status becomes Paid, lock it (unless admin wants to force unlock, but simple logic for now)
-          // Actually, "Once status is Paid, it is locked automatically". 
-          // We can set isLocked = true here.
-          // But input schema partial doesn't include isLocked (it was omitted in schema).
-          // We can use storage direct method or specific logic.
-          // I will manually update isLocked if status is Paid.
       }
       
       const updated = await storage.updatePatient(id, updates);
 
-      // If status changed to Paid, lock it
-      if (updated.status === 'Paid' && !updated.isLocked) {
-         // Need a way to set isLocked. storage.updatePatient takes partial insertPatient which omitted isLocked.
-         // I should allow isLocked in updatePatient implementation even if schema omits it for insert.
-         // Let's modify storage.updatePatient signature to accept any partial of Patient really, or just handle it.
-         // For now, I'll rely on a separate internal update if needed, or better, allow isLocked in the backend update even if not in API input.
-         // But type safety... I'll cast updates.
-         // Actually, let's just make `updatePatient` accept Partial<Patient> in implementation but keeping interface cleaner.
-         // For now, I'll just skip the auto-lock in DB here because I can't set it via `updates` easily without changing types.
-         // Wait, I can do a direct DB update for locking.
-      }
-
-      // Re-read to check lock logic properly? 
-      // Simplified: Just update. The user logic says "Once Paid, it locks". 
-      // So if status is Paid, subsequent edits are blocked (checked at start of this handler).
-      // But we need to STORE isLocked = true.
-      // I'll update schema.ts to include isLocked in insertPatientSchema or make a separate update schema.
-      // For now, I will assume the frontend sends status 'Paid', and next time it is locked.
-      // But we need the DB to have isLocked=true.
-      // I will cheat and cast to any to set isLocked if status is Paid.
       if (input.status === 'Paid') {
           await storage.updatePatient(id, { isLocked: true } as any);
       }
@@ -170,6 +144,22 @@ export async function registerRoutes(
     } catch (err) {
       res.status(500).json({ message: "Upload failed" });
     }
+  });
+
+
+  app.get("/api/documents/:id/download", isAuthenticated, async (req, res) => {
+    const id = Number(req.params.id);
+    const doc = await storage.getDocument(id);
+    if (!doc) return res.status(404).json({ message: "Document not found" });
+
+    const filePath = path.resolve(doc.filePath);
+    if (!filePath.startsWith(path.resolve("uploads"))) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    res.setHeader("Content-Type", doc.fileType);
+    res.setHeader("Content-Disposition", `inline; filename="${doc.fileName}"`);
+    fs.createReadStream(filePath).pipe(res);
   });
 
   app.delete(api.documents.delete.path, isAuthenticated, async (req, res) => {

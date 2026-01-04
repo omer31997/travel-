@@ -17,7 +17,8 @@ import {
   Loader2,
   Calendar,
   MapPin,
-  Building
+  Building,
+  Eye
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -44,10 +45,6 @@ export default function PatientDetails() {
   const { toast } = useToast();
   const { user } = useAuth(); // In real app, check role here
 
-  // Simplified Admin check logic - in a real app, check user.role or claims
-  // For this demo, we'll assume any logged-in user can edit unless locked
-  // But strictly speaking, locked files should only be editable by Admin
-  // We'll simulate admin power if user email contains "admin"
   const isAdmin = user?.email?.includes("admin"); 
 
   if (isLoading) {
@@ -70,11 +67,9 @@ export default function PatientDetails() {
   }
 
   const isLocked = patient.isLocked;
-  // If locked, disable editing unless admin
   const canEdit = !isLocked || isAdmin;
 
   const handleStatusChange = (newStatus: string) => {
-    // If changing to Paid, warn or automatically lock on backend
     if (newStatus === "Paid" && !isLocked) {
       if (!confirm("Changing status to 'Paid' will LOCK this file. Continue?")) return;
     }
@@ -251,7 +246,7 @@ export default function PatientDetails() {
                       </div>
                       <div className="flex gap-1">
                          <a 
-                           href={`/${doc.filePath}`} // Assuming filePath is relative to public or handled by backend static serve
+                           href={`/api/documents/${doc.id}/download`}
                            target="_blank" 
                            rel="noreferrer"
                            className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-muted"
