@@ -66,6 +66,8 @@ export function PatientFormDialog({ patient, trigger, open, onOpenChange }: Pati
       destination: patient?.destination || "",
       guarantorId: patient?.guarantorId || undefined,
       status: patient?.status || "New",
+      totalCost: patient?.totalCost || 0,
+      amountPaid: patient?.amountPaid || 0,
     },
   });
 
@@ -79,6 +81,8 @@ export function PatientFormDialog({ patient, trigger, open, onOpenChange }: Pati
         destination: patient?.destination || "",
         guarantorId: patient?.guarantorId || undefined,
         status: patient?.status || "New",
+        totalCost: patient?.totalCost || 0,
+        amountPaid: patient?.amountPaid || 0,
       });
     }
   }, [isOpen, patient, form]);
@@ -160,6 +164,36 @@ export function PatientFormDialog({ patient, trigger, open, onOpenChange }: Pati
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="totalCost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Total Cost</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0" {...field} onChange={e => field.onChange(Number(e.target.value))} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="amountPaid"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount Paid</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0" {...field} onChange={e => field.onChange(Number(e.target.value))} value={field.value || ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="guarantorId"
@@ -195,11 +229,11 @@ export function PatientFormDialog({ patient, trigger, open, onOpenChange }: Pati
                 <FormItem>
                   <FormLabel>Medical Summary</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Brief description of condition..." 
+                    <Textarea
+                      placeholder="Brief description of condition..."
                       className="resize-none"
                       {...field}
-                      value={field.value || ""} 
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />

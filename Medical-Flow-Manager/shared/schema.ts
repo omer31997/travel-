@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -26,6 +26,8 @@ export const patients = pgTable("patients", {
   guarantorId: integer("guarantor_id").references(() => guarantors.id),
   status: text("status").notNull().default("New"), // New, Processing, Traveled, Returned, Paid
   isLocked: boolean("is_locked").default(false),
+  totalCost: integer("total_cost").default(0),
+  amountPaid: integer("amount_paid").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -75,4 +77,20 @@ export type InsertPatient = z.infer<typeof insertPatientSchema>;
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
-export const STATUS_OPTIONS = ["New", "Processing", "Traveled", "Returned", "Paid"] as const;
+export const STATUS_OPTIONS = ["New", "In Progress", "Traveled", "Paid Deposit", "Finish Treatment", "Come Back", "Bill Collect"] as const;
+
+// Audit Logs
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  action: text("action").notNull(), // 'UPDATE_FINANCIALS', 'UPLOAD_DOC', etc.
+  entityId: integer("entity_id").notNull(),
+  entityType: text("entity_type").notNull(), // 'patient', 'document', etc.
+  userId: integer("user_id"), // Nullable if system action or if we don't strictly enforce generic user link here
+  details: text("details"), // JSON string
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+

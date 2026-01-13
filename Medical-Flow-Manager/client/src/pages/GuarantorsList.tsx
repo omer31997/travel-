@@ -11,8 +11,8 @@ export default function GuarantorsList() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center">
         <div>
-           <h1 className="text-3xl font-bold tracking-tight">Guarantors</h1>
-           <p className="text-muted-foreground mt-1">Manage sponsoring organizations and entities.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Guarantors</h1>
+          <p className="text-muted-foreground mt-1">Manage sponsoring organizations and entities.</p>
         </div>
         <GuarantorFormDialog />
       </div>
@@ -23,7 +23,7 @@ export default function GuarantorsList() {
             <TableRow>
               <TableHead>Organization Name</TableHead>
               <TableHead>Contact Info</TableHead>
-              <TableHead>Address</TableHead>
+              <TableHead>Financial Requirement</TableHead>
               <TableHead className="text-right">Patients</TableHead>
             </TableRow>
           </TableHeader>
@@ -53,9 +53,9 @@ export default function GuarantorsList() {
                   <TableCell>
                     <div className="flex flex-col gap-1 text-sm">
                       {guarantor.email && (
-                         <div className="flex items-center gap-1.5 text-muted-foreground">
-                           <Mail className="w-3 h-3" /> {guarantor.email}
-                         </div>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Mail className="w-3 h-3" /> {guarantor.email}
+                        </div>
                       )}
                       {guarantor.contactInfo && (
                         <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -64,16 +64,19 @@ export default function GuarantorsList() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+                  <TableCell className="text-sm">
+                    {/* Display aggregated financials */}
+                    <div className="font-medium text-green-600">
+                      ${(guarantor as any).totalFinancials?.toLocaleString() || 0}
+                    </div>
                     {guarantor.address && (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                         <MapPin className="w-3 h-3" /> {guarantor.address}
                       </div>
                     )}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {/* In a real app, this would come from a count query */}
-                    —
+                    {(guarantor as any).patientCount || 0}
                   </TableCell>
                 </TableRow>
               ))

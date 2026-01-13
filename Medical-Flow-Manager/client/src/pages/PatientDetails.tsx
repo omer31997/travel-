@@ -6,19 +6,35 @@ import { PatientFormDialog } from "@/components/PatientFormDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { 
-  ArrowLeft, 
-  Upload, 
-  FileText, 
-  Image as ImageIcon, 
-  Trash2, 
-  Lock, 
+import {
+  ArrowLeft,
+  Upload,
+
+
+  Image as ImageIcon,
+  Trash2,
+  Lock,
   Unlock,
   Loader2,
   Calendar,
   MapPin,
-  Building
+  Building,
+  Eye,
+  Pencil,
+  History,
+  Download
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import {
@@ -48,7 +64,7 @@ export default function PatientDetails() {
   // For this demo, we'll assume any logged-in user can edit unless locked
   // But strictly speaking, locked files should only be editable by Admin
   // We'll simulate admin power if user email contains "admin"
-  const isAdmin = user?.email?.includes("admin"); 
+  const isAdmin = user?.email?.includes("admin");
 
   if (isLoading) {
     return (
@@ -126,9 +142,9 @@ export default function PatientDetails() {
               {isLocked ? "Unlock File" : "Lock File"}
             </Button>
           )}
-          
-          <PatientFormDialog 
-            patient={patient} 
+
+          <PatientFormDialog
+            patient={patient}
             trigger={
               <Button disabled={!canEdit} variant="secondary">Edit Details</Button>
             }
@@ -138,7 +154,7 @@ export default function PatientDetails() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
+
         {/* Left Col: Info */}
         <div className="md:col-span-2 space-y-6">
           <Card className="shadow-sm">
@@ -171,8 +187,8 @@ export default function PatientDetails() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm text-muted-foreground">Current Status</label>
-                  <Select 
-                    value={patient.status} 
+                  <Select
+                    value={patient.status}
                     onValueChange={handleStatusChange}
                     disabled={!canEdit}
                   >
@@ -188,8 +204,34 @@ export default function PatientDetails() {
                 </div>
               </div>
 
+
+
               <Separator />
-              
+
+              <div>
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <span>Financial Overview</span>
+                </h4>
+                <div className="grid grid-cols-3 gap-4 p-4 bg-muted/20 rounded-lg">
+                  <div>
+                    <div className="text-sm text-muted-foreground">Total Cost</div>
+                    <div className="text-lg font-semibold">${patient.totalCost || 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Amount Paid</div>
+                    <div className="text-lg font-semibold text-green-600">${patient.amountPaid || 0}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Remaining Balance</div>
+                    <div className={`text-lg font-semibold ${(patient.totalCost || 0) - (patient.amountPaid || 0) > 0 ? "text-red-600" : "text-gray-600"}`}>
+                      ${(patient.totalCost || 0) - (patient.amountPaid || 0)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
               <div>
                 <h4 className="font-medium mb-2">Medical Reports / Notes</h4>
                 <div className="bg-muted/30 p-4 rounded-lg text-sm whitespace-pre-wrap min-h-[100px]">
@@ -204,15 +246,15 @@ export default function PatientDetails() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Documents</CardTitle>
               <div className="flex gap-2">
-                 <input
+                <input
                   type="file"
                   ref={fileInputRef}
                   className="hidden"
                   onChange={handleFileUpload}
                   accept="image/*,application/pdf"
                 />
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   disabled={!canEdit || uploadMutation.isPending}
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -234,8 +276,8 @@ export default function PatientDetails() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {patient.documents.map((doc) => (
-                    <div 
-                      key={doc.id} 
+                    <div
+                      key={doc.id}
                       className="group flex items-start gap-3 p-3 border rounded-lg hover:border-primary/50 transition-colors bg-card"
                     >
                       <div className="p-2 bg-primary/10 rounded-md text-primary">
@@ -250,22 +292,24 @@ export default function PatientDetails() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                         <a 
-                           href={`/${doc.filePath}`} // Assuming filePath is relative to public or handled by backend static serve
-                           target="_blank" 
-                           rel="noreferrer"
-                           className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-muted"
-                         >
-                           <Eye className="w-4 h-4" />
-                         </a>
-                         {canEdit && (
-                           <button 
-                             onClick={() => deleteDocMutation.mutate({ id: doc.id, patientId: id })}
-                             className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-destructive/10"
-                           >
-                             <Trash2 className="w-4 h-4" />
-                           </button>
-                         )}
+                        <a
+                          href={`/uploads/${doc.fileName}`} // Assuming uploads are served from /uploads
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 text-muted-foreground hover:text-primary rounded-md hover:bg-muted"
+                          title="View / Download"
+                          download
+                        >
+                          <Download className="w-4 h-4" />
+                        </a>
+                        {canEdit && (
+                          <button
+                            onClick={() => deleteDocMutation.mutate({ id: doc.id, patientId: id })}
+                            className="p-1.5 text-muted-foreground hover:text-destructive rounded-md hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -273,49 +317,119 @@ export default function PatientDetails() {
               )}
             </CardContent>
           </Card>
-        </div>
+        </div >
 
         {/* Right Col: Timeline/Status Flow (Visual) */}
-        <div className="space-y-6">
-           <Card className="shadow-sm">
-             <CardHeader>
-               <CardTitle>Case Timeline</CardTitle>
-             </CardHeader>
-             <CardContent>
-               <div className="relative border-l-2 border-muted ml-3 space-y-6 pb-2">
-                 {STATUS_OPTIONS.map((status, idx) => {
-                   const currentStatusIdx = STATUS_OPTIONS.indexOf(patient.status);
-                   const isCompleted = idx <= currentStatusIdx;
-                   const isCurrent = idx === currentStatusIdx;
+        < div className="space-y-6" >
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle>Case Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative border-l-2 border-muted ml-3 space-y-6 pb-2">
+                {STATUS_OPTIONS.map((status, idx) => {
+                  const currentStatusIdx = STATUS_OPTIONS.indexOf(patient.status);
+                  const isCompleted = idx <= currentStatusIdx;
+                  const isCurrent = idx === currentStatusIdx;
 
-                   return (
-                     <div key={status} className="relative pl-6">
-                       <div 
-                         className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 
+                  return (
+                    <div key={status} className="relative pl-6">
+                      <div
+                        className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 
                            ${isCompleted ? "bg-primary border-primary" : "bg-background border-muted"}
                            ${isCurrent ? "ring-4 ring-primary/20" : ""}
-                         `} 
-                       />
-                       <div className={`text-sm font-medium ${isCompleted ? "text-foreground" : "text-muted-foreground"}`}>
-                         {status}
-                       </div>
-                       {isCurrent && <div className="text-xs text-muted-foreground mt-0.5">Current Stage</div>}
-                     </div>
-                   );
-                 })}
-               </div>
-               
-               {isLocked && (
-                 <div className="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 flex items-start gap-2">
-                   <Lock className="w-4 h-4 mt-0.5 shrink-0" />
-                   <div>
-                     <strong>File Locked</strong>
-                     <p className="text-xs mt-1">Modifications restricted to Admins only because the case is closed/paid.</p>
-                   </div>
-                 </div>
-               )}
-             </CardContent>
-           </Card>
+                         `}
+                      />
+                      <div className={`text-sm font-medium ${isCompleted ? "text-foreground" : "text-muted-foreground"}`}>
+                        {status}
+                      </div>
+                      {isCurrent && <div className="text-xs text-muted-foreground mt-0.5">Current Stage</div>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {isLocked && (
+                <div className="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 flex items-start gap-2">
+                  <Lock className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div>
+                    <strong>File Locked</strong>
+                    <p className="text-xs mt-1">Modifications restricted to Admins only because the case is closed/paid.</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div >
+      </div >
+    </div >
+  );
+}
+
+function FinancialsCard({ patient, canEdit, updateMutation }: { patient: any, canEdit: boolean, updateMutation: any }) {
+  const [open, setOpen] = useState(false);
+  const [values, setValues] = useState({
+    totalCost: patient.totalCost || 0,
+    amountPaid: patient.amountPaid || 0
+  });
+
+  const handleSave = () => {
+    updateMutation.mutate({
+      id: patient.id,
+      totalCost: parseInt(values.totalCost),
+      amountPaid: parseInt(values.amountPaid)
+    });
+    setOpen(false);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-medium flex items-center gap-2">
+          <span>Financial Overview</span>
+        </h4>
+        {canEdit && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setValues({ totalCost: patient.totalCost || 0, amountPaid: patient.amountPaid || 0 })}>
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Financials</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="total" className="text-right">Total Cost</Label>
+                  <Input id="total" type="number" value={values.totalCost} onChange={(e) => setValues({ ...values, totalCost: e.target.value })} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="paid" className="text-right">Amount Paid</Label>
+                  <Input id="paid" type="number" value={values.amountPaid} onChange={(e) => setValues({ ...values, amountPaid: e.target.value })} className="col-span-3" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSave}>Save changes</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+      <div className="grid grid-cols-3 gap-4 p-4 bg-muted/20 rounded-lg">
+        <div>
+          <div className="text-sm text-muted-foreground">Total Cost</div>
+          <div className="text-lg font-semibold">${patient.totalCost || 0}</div>
+        </div>
+        <div>
+          <div className="text-sm text-muted-foreground">Amount Paid</div>
+          <div className="text-lg font-semibold text-green-600">${patient.amountPaid || 0}</div>
+        </div>
+        <div>
+          <div className="text-sm text-muted-foreground">Remaining Balance</div>
+          <div className={`text-lg font-semibold ${(patient.totalCost || 0) - (patient.amountPaid || 0) > 0 ? "text-red-600" : "text-gray-600"}`}>
+            ${(patient.totalCost || 0) - (patient.amountPaid || 0)}
+          </div>
         </div>
       </div>
     </div>

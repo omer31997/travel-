@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -60,7 +61,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  log("Registering routes...");
   await registerRoutes(httpServer, app);
+  log("Routes registered.");
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -77,7 +80,9 @@ app.use((req, res, next) => {
     serveStatic(app);
   } else {
     const { setupVite } = await import("./vite");
+    log("Setting up Vite...");
     await setupVite(httpServer, app);
+    log("Vite setup complete.");
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
@@ -89,7 +94,6 @@ app.use((req, res, next) => {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

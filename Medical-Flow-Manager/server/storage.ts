@@ -2,15 +2,16 @@ import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import {
   users, patients, guarantors, documents,
-  type User, type InsertUser,
+  type User,
   type Patient, type InsertPatient,
   type Guarantor, type InsertGuarantor,
-  type Document, type InsertDocument
+  type Document, type InsertDocument,
+  auditLogs, type AuditLog, type InsertAuditLog
 } from "@shared/schema";
 
 export interface IStorage {
   // Guarantors
-  getGuarantors(): Promise<Guarantor[]>;
+  getGuarantors(): Promise<(Guarantor & { totalFinancials: number; patientCount: number })[]>;
   getGuarantor(id: number): Promise<Guarantor | undefined>;
   createGuarantor(guarantor: InsertGuarantor): Promise<Guarantor>;
 
@@ -26,12 +27,27 @@ export interface IStorage {
   createDocument(document: InsertDocument): Promise<Document>;
   deleteDocument(id: number): Promise<void>;
   getDocument(id: number): Promise<Document | undefined>;
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
 }
 
 export class DatabaseStorage implements IStorage {
   // Guarantors
-  async getGuarantors(): Promise<Guarantor[]> {
-    return await db.select().from(guarantors).orderBy(desc(guarantors.createdAt));
+  async getGuarantors(): Promise<(Guarantor & { totalFinancials: number; patientCount: number })[]> {
+    const allGuarantors = await db.select().from(guarantors).orderBy(desc(guarantors.createdAt));
+
+    // Enrich with stats. In a real DB, use a JOIN with aggregation.
+    // For now, doing N+1 query or fetching all patients (efficient enough for small scale)
+    const allPatients = await db.select().from(patients);
+
+    return allGuarantors.map((g: any) => {
+      const guarantorPatients = allPatients.filter((p: Patient) => p.guarantorId === g.id);
+      const totalFinancials = guarantorPatients.reduce((sum: number, p: Patient) => sum + (p.totalCost || 0), 0);
+      return {
+        ...g,
+        patientCount: guarantorPatients.length,
+        totalFinancials
+      };
+    });
   }
 
   async getGuarantor(id: number): Promise<Guarantor | undefined> {
@@ -47,17 +63,17 @@ export class DatabaseStorage implements IStorage {
   // Patients
   async getPatients(params?: { search?: string; status?: string }): Promise<Patient[]> {
     let query = db.select().from(patients).orderBy(desc(patients.createdAt));
-    
+
     // Simple in-memory filtering for search if needed or extend query
     // For now returning all, basic implementation
     const allPatients = await query;
     return allPatients.filter(p => {
-        if (params?.status && p.status !== params.status) return false;
-        if (params?.search) {
-            const search = params.search.toLowerCase();
-            return p.fullName.toLowerCase().includes(search) || p.passportNumber.toLowerCase().includes(search);
-        }
-        return true;
+      if (params?.status && p.status !== params.status) return false;
+      if (params?.search) {
+        const search = params.search.toLowerCase();
+        return p.fullName.toLowerCase().includes(search) || p.passportNumber.toLowerCase().includes(search);
+      }
+      return true;
     });
   }
 
@@ -100,6 +116,11 @@ export class DatabaseStorage implements IStorage {
   async getDocument(id: number): Promise<Document | undefined> {
     const [document] = await db.select().from(documents).where(eq(documents.id, id));
     return document;
+  }
+
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const [entry] = await db.insert(auditLogs).values(log).returning();
+    return entry;
   }
 }
 

@@ -42,10 +42,10 @@ export async function registerRoutes(
   app.get(api.patients.get.path, isAuthenticated, async (req, res) => {
     const patient = await storage.getPatient(Number(req.params.id));
     if (!patient) return res.status(404).json({ message: "Patient not found" });
-    
+
     const guarantor = patient.guarantorId ? await storage.getGuarantor(patient.guarantorId) : null;
     const documents = await storage.getDocuments(patient.id);
-    
+
     res.json({ ...patient, guarantor, documents });
   });
 
@@ -69,37 +69,37 @@ export async function registerRoutes(
     if (!existing) return res.status(404).json({ message: "Patient not found" });
 
     // Check locking
-    const user = req.user as User;
+    const user = (req as any).user as User;
     if (existing.isLocked && user.role !== 'admin') {
-        return res.status(403).json({ message: "File is locked. Only admin can edit." });
+      return res.status(403).json({ message: "File is locked. Only admin can edit." });
     }
 
     try {
       const input = api.patients.update.input.parse(req.body);
-      
+
       // Auto-lock logic
       let updates = { ...input };
       if (input.status === 'Paid' && !existing.isLocked) {
-          // If status becomes Paid, lock it (unless admin wants to force unlock, but simple logic for now)
-          // Actually, "Once status is Paid, it is locked automatically". 
-          // We can set isLocked = true here.
-          // But input schema partial doesn't include isLocked (it was omitted in schema).
-          // We can use storage direct method or specific logic.
-          // I will manually update isLocked if status is Paid.
+        // If status becomes Paid, lock it (unless admin wants to force unlock, but simple logic for now)
+        // Actually, "Once status is Paid, it is locked automatically". 
+        // We can set isLocked = true here.
+        // But input schema partial doesn't include isLocked (it was omitted in schema).
+        // We can use storage direct method or specific logic.
+        // I will manually update isLocked if status is Paid.
       }
-      
+
       const updated = await storage.updatePatient(id, updates);
 
       // If status changed to Paid, lock it
       if (updated.status === 'Paid' && !updated.isLocked) {
-         // Need a way to set isLocked. storage.updatePatient takes partial insertPatient which omitted isLocked.
-         // I should allow isLocked in updatePatient implementation even if schema omits it for insert.
-         // Let's modify storage.updatePatient signature to accept any partial of Patient really, or just handle it.
-         // For now, I'll rely on a separate internal update if needed, or better, allow isLocked in the backend update even if not in API input.
-         // But type safety... I'll cast updates.
-         // Actually, let's just make `updatePatient` accept Partial<Patient> in implementation but keeping interface cleaner.
-         // For now, I'll just skip the auto-lock in DB here because I can't set it via `updates` easily without changing types.
-         // Wait, I can do a direct DB update for locking.
+        // Need a way to set isLocked. storage.updatePatient takes partial insertPatient which omitted isLocked.
+        // I should allow isLocked in updatePatient implementation even if schema omits it for insert.
+        // Let's modify storage.updatePatient signature to accept any partial of Patient really, or just handle it.
+        // For now, I'll rely on a separate internal update if needed, or better, allow isLocked in the backend update even if not in API input.
+        // But type safety... I'll cast updates.
+        // Actually, let's just make `updatePatient` accept Partial<Patient> in implementation but keeping interface cleaner.
+        // For now, I'll just skip the auto-lock in DB here because I can't set it via `updates` easily without changing types.
+        // Wait, I can do a direct DB update for locking.
       }
 
       // Re-read to check lock logic properly? 
@@ -111,12 +111,21 @@ export async function registerRoutes(
       // But we need the DB to have isLocked=true.
       // I will cheat and cast to any to set isLocked if status is Paid.
       if (input.status === 'Paid') {
-          await storage.updatePatient(id, { isLocked: true } as any);
+        await storage.updatePatient(id, { isLocked: true } as any);
       }
-      
+
+      // Audit Log
+      await storage.createAuditLog({
+        action: "UPDATE_PATIENT_FINANCIALS",
+        entityId: id,
+        entityType: "patient",
+        userId: Number(user?.id) || 0, // Fallback for safety, though auth middleware ensures user
+        details: JSON.stringify(updates)
+      });
+
       res.json(updated);
     } catch (err) {
-       if (err instanceof z.ZodError) {
+      if (err instanceof z.ZodError) {
         res.status(400).json({ message: err.errors[0].message });
       } else {
         res.status(500).json({ message: "Internal server error" });
@@ -147,16 +156,18 @@ export async function registerRoutes(
   // Documents
   app.post(api.documents.upload.path, isAuthenticated, upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    
+
     const patientId = Number(req.body.patientId);
     if (isNaN(patientId)) return res.status(400).json({ message: "Invalid patientId" });
 
     const patient = await storage.getPatient(patientId);
     if (!patient) return res.status(404).json({ message: "Patient not found" });
 
-    const user = req.user as User;
+    if (!patient) return res.status(404).json({ message: "Patient not found" });
+
+    const user = (req as any).user as User;
     if (patient.isLocked && user.role !== 'admin') {
-        return res.status(403).json({ message: "File is locked. Cannot upload." });
+      return res.status(403).json({ message: "File is locked. Cannot upload." });
     }
 
     try {
@@ -166,6 +177,15 @@ export async function registerRoutes(
         filePath: req.file.path,
         fileType: req.file.mimetype,
       });
+
+      await storage.createAuditLog({
+        action: "UPLOAD_DOCUMENT",
+        entityId: doc.id,
+        entityType: "document",
+        userId: Number(user?.id) || 0,
+        details: JSON.stringify({ fileName: doc.fileName })
+      });
+
       res.status(201).json(doc);
     } catch (err) {
       res.status(500).json({ message: "Upload failed" });
@@ -178,15 +198,23 @@ export async function registerRoutes(
     if (!doc) return res.status(404).json({ message: "Document not found" });
 
     const patient = await storage.getPatient(doc.patientId);
-    const user = req.user as User;
+    const user = (req as any).user as User;
     if (patient && patient.isLocked && user.role !== 'admin') {
-        return res.status(403).json({ message: "File is locked. Cannot delete." });
+      return res.status(403).json({ message: "File is locked. Cannot delete." });
     }
 
     await storage.deleteDocument(id);
     // Optionally delete file from disk
     fs.unlink(doc.filePath, (err) => {
-        if (err) console.error("Failed to delete file", err);
+      if (err) console.error("Failed to delete file", err);
+    });
+
+    await storage.createAuditLog({
+      action: "DELETE_DOCUMENT",
+      entityId: id,
+      entityType: "document",
+      userId: Number((req as any).user?.id) || 0,
+      details: JSON.stringify({ fileName: doc.fileName })
     });
 
     res.status(204).send();
@@ -195,8 +223,8 @@ export async function registerRoutes(
   // Seed Data (if empty)
   const users = await storage.getGuarantors();
   if (users.length === 0) {
-      await storage.createGuarantor({ name: "Ministry of Health", contactInfo: "123456", email: "moh@gov.xy", address: "Capital City" });
-      await storage.createGuarantor({ name: "Private Insurance Co", contactInfo: "987654", email: "claims@insurance.co", address: "Business District" });
+    await storage.createGuarantor({ name: "Ministry of Health", contactInfo: "123456", email: "moh@gov.xy", address: "Capital City" });
+    await storage.createGuarantor({ name: "Private Insurance Co", contactInfo: "987654", email: "claims@insurance.co", address: "Business District" });
   }
 
   return httpServer;

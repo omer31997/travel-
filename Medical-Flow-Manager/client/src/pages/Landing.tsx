@@ -32,7 +32,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex flex-col items-center justify-center p-4">
       <div className="max-w-4xl w-full text-center space-y-8 animate-in fade-in zoom-in duration-700">
-        
+
         {/* Logo/Icon */}
         <div className="mx-auto w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mb-6 shadow-lg shadow-primary/20">
           <Stethoscope className="w-10 h-10" />
@@ -40,7 +40,7 @@ export default function Landing() {
 
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold font-display tracking-tight text-slate-900">
-            Medical Tourism Management
+            Rahatuk Medical Services
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Secure patient file management, document scanning, and case tracking for healthcare providers.
@@ -65,25 +65,25 @@ export default function Landing() {
         {/* Features Grid */}
         <div className="grid md:grid-cols-3 gap-6 mt-16 text-left">
           <div className="bg-white/60 backdrop-blur p-6 rounded-xl border shadow-sm">
-             <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
-               <ShieldCheck className="w-6 h-6" />
-             </div>
-             <h3 className="font-bold text-lg mb-2">Secure Records</h3>
-             <p className="text-sm text-muted-foreground">Encrypted patient data with role-based access control and file locking.</p>
+            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Secure Records</h3>
+            <p className="text-sm text-muted-foreground">Encrypted patient data with role-based access control and file locking.</p>
           </div>
           <div className="bg-white/60 backdrop-blur p-6 rounded-xl border shadow-sm">
-             <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4">
-               <UploadCloud className="w-6 h-6" />
-             </div>
-             <h3 className="font-bold text-lg mb-2">Digital Documents</h3>
-             <p className="text-sm text-muted-foreground">Instant scan uploading for passports, medical reports, and invoices.</p>
+            <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4">
+              <UploadCloud className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Digital Documents</h3>
+            <p className="text-sm text-muted-foreground">Instant scan uploading for passports, medical reports, and invoices.</p>
           </div>
           <div className="bg-white/60 backdrop-blur p-6 rounded-xl border shadow-sm">
-             <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mb-4">
-               <Stethoscope className="w-6 h-6" />
-             </div>
-             <h3 className="font-bold text-lg mb-2">Case Tracking</h3>
-             <p className="text-sm text-muted-foreground">End-to-end workflow management from initial inquiry to payment.</p>
+            <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mb-4">
+              <Stethoscope className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Case Tracking</h3>
+            <p className="text-sm text-muted-foreground">End-to-end workflow management from initial inquiry to payment.</p>
           </div>
         </div>
 
