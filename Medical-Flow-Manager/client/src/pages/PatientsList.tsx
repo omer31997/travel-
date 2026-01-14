@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { usePatients } from "@/hooks/use-patients";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PatientFormDialog } from "@/components/PatientFormDialog";
 import { Input } from "@/components/ui/input";
@@ -24,9 +24,10 @@ import { Search, Loader2, Eye, Lock } from "lucide-react";
 import { STATUS_OPTIONS } from "@shared/schema";
 
 export default function PatientsList() {
+  const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  
+
   // Debounce could be added here for production
   const { data: patients, isLoading } = usePatients(search, statusFilter);
 
@@ -110,11 +111,14 @@ export default function PatientsList() {
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Link href={`/patients/${patient.id}`}>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setLocation(`/patients/${patient.id}`)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

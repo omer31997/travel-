@@ -8,13 +8,14 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import { Users, FileCheck, Building2, TrendingUp, AlertCircle } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
 
 const COLORS = ['#3b82f6', '#eab308', '#a855f7', '#f97316', '#22c55e'];
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const { data: patients, isLoading: pLoading } = usePatients();
   const { data: guarantors, isLoading: gLoading } = useGuarantors();
 
@@ -105,9 +106,12 @@ export default function Dashboard() {
               {patientList.slice(0, 5).map((patient) => (
                 <div key={patient.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
                   <div className="space-y-1">
-                    <Link href={`/patients/${patient.id}`} className="font-medium hover:text-primary transition-colors">
+                    <div
+                      onClick={() => setLocation(`/patients/${patient.id}`)}
+                      className="font-medium hover:text-primary transition-colors cursor-pointer"
+                    >
                       {patient.fullName}
-                    </Link>
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {patient.passportNumber} • {patient.destination || "No destination"}
                     </div>
