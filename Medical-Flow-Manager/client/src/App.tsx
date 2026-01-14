@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/Sidebar";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Pages
 import Dashboard from "@/pages/Dashboard";
@@ -46,7 +47,11 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/patients" component={PatientsList} />
-        <Route path="/patients/:id" component={PatientDetails} />
+        <Route path="/patients/:id">
+          <ErrorBoundary>
+            <PatientDetails />
+          </ErrorBoundary>
+        </Route>
         <Route path="/guarantors" component={GuarantorsList} />
         <Route component={NotFound} />
       </Switch>

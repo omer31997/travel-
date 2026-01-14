@@ -60,6 +60,13 @@ export default function PatientDetails() {
   const { toast } = useToast();
   const { user } = useAuth(); // In real app, check role here
 
+  // DEBUG LOGGING
+  if (patient) {
+    console.log("Patient Data Loaded:", patient);
+    console.log("Documents:", patient.documents);
+    console.log("Guarantor:", patient.guarantor);
+  }
+
   // Simplified Admin check logic - in a real app, check user.role or claims
   // For this demo, we'll assume any logged-in user can edit unless locked
   // But strictly speaking, locked files should only be editable by Admin
