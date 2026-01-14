@@ -22,7 +22,8 @@ import {
   Eye,
   Pencil,
   History,
-  Download
+  Download,
+  FileText
 } from "lucide-react";
 import {
   Dialog,
@@ -335,7 +336,7 @@ export default function PatientDetails() {
             <CardContent>
               <div className="relative border-l-2 border-muted ml-3 space-y-6 pb-2">
                 {STATUS_OPTIONS.map((status, idx) => {
-                  const currentStatusIdx = STATUS_OPTIONS.indexOf(patient.status);
+                  const currentStatusIdx = STATUS_OPTIONS.indexOf(patient.status as any); // Cast to any to avoid literal type mismatch
                   const isCompleted = idx <= currentStatusIdx;
                   const isCurrent = idx === currentStatusIdx;
 
